@@ -14,22 +14,18 @@ actor Main
       let path = FilePath(FileAuth(env.root), file_name)
       match OpenFile(path)
       | let file: File =>
-          var elves: Array[Elf] = []
           var current_elf: Elf = Elf
           for line in file.lines() do
             match line
             | "" =>
-              elves.push(current_elf)
-              current_elf = Elf
+              msg_count = msg_count + 1
+              current_elf.getTotalCalories(this)
+              current_elf = Elf //Replace current elf with a new elf
             | let s: String => 
               try
-                current_elf.eat(s.u32()?)
+                current_elf.pack(s.u32()?)
               end
             end
-          end
-          for elf in elves.values() do
-            elf.getTotalCalories(this)
-            msg_count = msg_count + 1
           end
       else
         env.err.print("Error opening file '" + file_name + "'")
@@ -42,19 +38,21 @@ actor Main
       max = sum
     end
     if msg_count == 0 then
-      stdout.print("Answer is " + max.string())
+      stdout.print("Max calories is " + max.string())
     end
 
 
 actor Elf
-  let calories: Array[U32]
+  // An array of calorie counts for each snack
+  let snacks: Array[U32]
 
   new create() =>
-    calories = []
+    snacks = []
 
-  be eat(food: U32) =>
-    calories.push(food)
+  be pack(food: U32) =>
+    snacks.push(food)
 
   be getTotalCalories(main: Main) =>
-    let sum: U32 = Iter[U32](calories.values()).fold[U32](0, {(sum, i) => sum + i })
+    let sum: U32 = Iter[U32](snacks.values()).fold[U32](0, {(sum, i) => sum + i })
     main.report(sum)
+
