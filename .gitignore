@@ -1,0 +1,4 @@
+# Generated binaries have no extension, so ignore those files
+*
+!/**/
+!*.*
