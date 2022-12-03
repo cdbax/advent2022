@@ -7,15 +7,49 @@ primitive Scissors
 
 type Shape is (Rock | Paper | Scissors)
 
-primitive ShapeBuilder
-  fun fromString(s: String): Shape? =>
+primitive Win
+primitive Lose
+primitive Draw
+
+type Goal is (Win | Lose | Draw)
+
+primitive Builder
+  fun shapeFromString(s: String): Shape? =>
     match s
-    | "A" | "X" => Rock
-    | "B" | "Y" => Paper
-    | "C" | "Z" => Scissors
+    | "A" => Rock
+    | "B" => Paper
+    | "C" => Scissors
     else
       error
     end
+
+  fun goalFromString(s: String): Goal? =>
+    match s
+    | "X" => Lose
+    | "Y" => Draw
+    | "Z" => Win
+    else
+      error
+    end
+
+  fun nextMove(s: Shape, g: Goal): Shape =>
+    match g
+    | Draw => s
+    | Lose =>
+      match s
+      | Rock => Scissors
+      | Paper => Rock
+      | Scissors => Paper
+      end
+    | Win =>
+      match s
+      | Rock => Paper
+      | Paper => Scissors
+      | Scissors => Rock
+      end
+    end
+
+
 
 
 actor Main
@@ -33,16 +67,11 @@ actor Main
       | let file: File =>
           for line in file.lines() do
             let chars: Array[String] = line.split_by(" ")
-            let round: Array[Shape] = 
-                          Iter[String]((consume chars).values())
-                            .map[Shape]({(s: String): Shape? => ShapeBuilder.fromString(s)?})
-                            .collect(Array[Shape](2))
-            if round.size() == 2 then
-              let opponent: Shape = round(0)?
-              let me: Shape = round(1)?
-              Game(opponent, me).reportScore(this)
-              msg_count = msg_count + 1
-            end
+            let opponent: Shape = Builder.shapeFromString(chars(0)?)?
+            let goal: Goal = Builder.goalFromString(chars(1)?)?
+            let me: Shape = Builder.nextMove(opponent, goal)
+            Game(opponent, me).reportScore(this)
+            msg_count = msg_count + 1
           end
       else
         env.err.print("Error opening file '" + file_name + "'")
