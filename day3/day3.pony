@@ -15,8 +15,16 @@ actor Main
       let path = FilePath(FileAuth(env.root), file_name)
       match OpenFile(path)
       | let file: File =>
-          for line in file.lines() do
-            SackChecker(consume line).checkSack(this)
+          let lines = file.lines()
+          // Dispatch 3 lines at a time to a BatchChecker
+          while lines.has_next() do
+            var batch_count: U32 = 0
+            let checker = BatchChecker(this)
+            while lines.has_next() and (batch_count < 3) do
+              checker.addSack(lines.next()?)
+              batch_count = batch_count + 1
+            end
+            checker.checkBatch()
             msg_count = msg_count + 1
           end
       else
@@ -32,35 +40,38 @@ actor Main
     end
 
 
-actor SackChecker
-  let sack_contents: String
+actor BatchChecker
+  var batch: Array[String]
+  let main: Main
 
-  new create(sack_contents': String) =>
-    sack_contents = sack_contents'
+  new create(main': Main) =>
+    batch = []
+    main = main'
 
-  be checkSack(main: Main) =>
-    // Initialise a couple of sets
-    // Strings are just a sequence of bytes, and we know we're only dealing
-    // with characters that don't exceed 255 so we can just us U8s to keep
-    // it simple
-    let set_a: HashSet[U8, HashEq[U8]] = HashSet[U8, HashEq[U8]].create()
-    let set_b: HashSet[U8, HashEq[U8]] = HashSet[U8, HashEq[U8]].create()
-    // Chop the sack contents in half
-    let chop_length = sack_contents.size() / 2
-    let chop_target = sack_contents.clone()
-    (let compartment_a: String, let compartment_b: String) = (consume chop_target).chop(chop_length)
-    // Populate the sets with their respective contents
-    for i in compartment_a.values() do
-      set_a.set(i)
-    end
-    for i in compartment_b.values() do
-      set_b.set(i)
-    end
-    // Intersect the sets, leaving us with the common item
-    set_a.intersect(set_b)
-    let items = set_a.values()
-    if items.has_next() then
-      try
+  be addSack(sack: String) =>
+    batch.push(sack)
+  
+  be checkBatch() =>
+    try
+      // Build the first set from the first sack
+      let first_set = Set[U8].create()
+      let first_sack = batch.shift()?
+      for i in first_sack.values() do
+        first_set.set(i)
+      end
+      // Build a set for each remaining sack and intersect with the first
+      let other_sacks = batch.values()
+      while other_sacks.has_next() do
+        let next_set = Set[U8].create()
+        let next_sack = other_sacks.next()?
+        for i in next_sack.values() do
+          next_set.set(i)
+        end
+        first_set.intersect(next_set)
+      end
+      // Calculate priority from the common item
+      let items = first_set.values()
+      if items.has_next() then
         let item = items.next()?
         let priority = Priority.forItem(item)
         main.report(priority)

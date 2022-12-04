@@ -20,3 +20,7 @@ of the docs I haven't got to yet.
 
 Today was also the first day where my initial answer was wrong, because
 I stuffed up the math for uppercase letters.
+
+While doing Part 2 I reread the Set documentation, and found that I could
+avoid using `HashSet` directly and just use `Set` to do what I needed, and
+not have to worry about type of the hash function.
