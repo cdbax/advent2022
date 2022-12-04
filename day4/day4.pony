@@ -20,7 +20,7 @@ actor Main
             let assignments: Array[String] iso = line.split_by(",")
             let elf_1: Array[U32] val = recover val Assignment.fromString(assignments(0) ?) ? end
             let elf_2: Array[U32] val = recover val Assignment.fromString(assignments(1) ?) ? end
-            // Get the checker to see if a section contains its counterpart and report back
+            // Get the checker to see if a section overlaps its counterpart and report back
             SectionChecker(elf_1, elf_2).checkSections(this)
             msg_count = msg_count + 1
           end
@@ -57,9 +57,9 @@ actor SectionChecker
     section_2 = section_2'
 
   be checkSections(main: Main) =>
-    let section_1_contains_2 = Iter[U32](section_2.values()).all({(s) => section_1.contains(s)})
-    let section_2_contains_1 = Iter[U32](section_1.values()).all({(s) => section_2.contains(s)})
-    if section_1_contains_2 or section_2_contains_1 then
+    let section_1_overlaps_2 = Iter[U32](section_2.values()).any({(s) => section_1.contains(s)})
+    let section_2_overlaps_1 = Iter[U32](section_1.values()).any({(s) => section_2.contains(s)})
+    if section_1_overlaps_2 or section_2_overlaps_1 then
       main.report(1)
     else
       main.report(0)
