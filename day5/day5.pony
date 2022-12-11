@@ -73,7 +73,7 @@ actor Main
             (let load: Array[String] iso, from_stack.crates) = (consume from_stack.crates).chop(qty)
             stdout.print("Qty = " + qty.string() + " Load = " + load.size().string())
             let to_stack = stacks(to_id.u8() ?) ?
-            for c in (consume load).values() do
+            for c in (consume load).reverse().values() do
               stdout.print("Adding " + c + " to " + to_id)
               to_stack.crates.unshift(c)
             end
