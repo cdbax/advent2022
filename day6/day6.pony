@@ -15,17 +15,17 @@ actor Main
       match OpenFile(path)
       | let file: File =>
           for line in file.lines() do
-            var last_4: Array[String] = Array[String](4)
+            var last_14: Array[String] = Array[String](14)
             var count: U32 = 0
             var check_chars = Array[String]
-            while check_chars.size() < 4 do
+            while check_chars.size() < 14 do
               count = count + 1
               let char = String.from_array([line.shift() ?])
-              if last_4.size() == 4 then
-                last_4.shift() ?
+              if last_14.size() == 14 then
+                last_14.shift() ?
               end
-              last_4.push(char)
-              check_chars = Iter[String](last_4.values()).unique[HashEq[String]]().collect(Array[String])
+              last_14.push(char)
+              check_chars = Iter[String](last_14.values()).unique[HashEq[String]]().collect(Array[String])
             end
             stdout.print("Marker found at " + count.string())
           end
