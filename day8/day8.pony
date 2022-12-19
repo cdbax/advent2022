@@ -32,96 +32,65 @@ actor Main
             end
           end
 
-          // We have to initialise the array like this to ensure each element
-          // is unique.
-          let visible_trees = Array[Array[Bool]].create(rows.size())
-          for r in rows.values() do
-            visible_trees.push(Array[Bool].init(false, cols.size()))
-          end
-          let row_max_idx = cols.size() - 1 
-          
-          // Process each row/column in both directions, counting number of trees
-          // Left to Right
-          for row_pair in rows.pairs() do
-            let row_idx = row_pair._1
-            let row = row_pair._2
-            let state_row = visible_trees(row_idx) ?
-            var max_height: U8 = 0
-            for col_pair in row.pairs() do
-              let col_idx = col_pair._1
-              let height = col_pair._2
-              if col_idx == 0 then
-                max_height = height
-                state_row(col_idx) ? = true
-              elseif height > max_height then
-                max_height = height
-                state_row(col_idx) ? = true
-              end
+          var max_score: U32 = 0
+          for (row_idx, row) in rows.pairs() do
+            // Edge trees will always have a score of zero, so skip them
+            if (row_idx == 0) or (row_idx == (rows.size() - 1)) then
+              continue
             end
-          end
-          // Right to Left
-          for row_pair in rows.pairs() do
-            let row_idx = row_pair._1
-            let row = row_pair._2
-            let state_row = visible_trees(row_idx) ?
-            var max_height: U8 = 0
-            for col_pair in row.reverse().pairs() do
-              let col_idx = col_pair._1
-              let height = col_pair._2
-              if col_idx == 0 then
-                max_height = height
-                state_row(row_max_idx - col_idx) ? = true
-              elseif height > max_height then
-                max_height = height
-                state_row(row_max_idx - col_idx) ? = true
+            
+            for (col_idx, height) in row.pairs() do
+              if (col_idx == 0) or (col_idx == (cols.size() - 1)) then
+                continue
               end
-            end
-          end
-          // Down
-          for col_pair in cols.pairs() do
-            let col_idx = col_pair._1
-            let col = col_pair._2
-            var max_height: U8 = 0
-            for row_pair in col.pairs() do
-              let row_idx = row_pair._1
-              let height = row_pair._2
-              if row_idx == 0 then
-                max_height = height
-                visible_trees(row_idx) ?(col_idx) ? = true
-              elseif height > max_height then
-                max_height = height
-                visible_trees(row_idx) ?(col_idx) ? = true
+              var total_score: U32 = 1
+              let left = row.slice(where to = col_idx)
+              let right = row.slice(col_idx + 1)
+              let col = cols(col_idx) ?
+              let up = col.slice(where to = row_idx)
+              let down = col.slice(row_idx + 1)
+              // Iterate through left trees in reverse
+              var count: U32 = 0
+              for t in left.reverse().values() do
+                count = count + 1
+                if t >= height then
+                  break
+                end
               end
-            end
-          end
-          // Up
-          for col_pair in cols.pairs() do
-            let col_idx = col_pair._1
-            let col = col_pair._2
-            var max_height: U8 = 0
-            for row_pair in col.reverse().pairs() do
-              let row_idx = row_pair._1
-              let height = row_pair._2
-              if row_idx == 0 then
-                max_height = height
-                visible_trees(row_max_idx - row_idx) ?(col_idx) ? = true
-              elseif height > max_height then
-                max_height = height
-                visible_trees(row_max_idx - row_idx) ?(col_idx) ? = true
+              total_score = total_score * count
+              count = 0
+              // Iterate through right trees
+              for t in right.values() do
+                count = count + 1
+                if t >= height then
+                  break
+                end
+              end
+              total_score = total_score * count
+              count = 0
+              // Iterate through up trees in reverse
+              for t in up.reverse().values() do
+                count = count + 1
+                if t >= height then
+                  break
+                end
+              end              
+              total_score = total_score * count
+              count = 0
+              // Iterate through down trees
+              for t in down.values() do
+                count = count + 1
+                if t >= height then
+                  break
+                end
+              end
+              total_score = total_score * count
+              if total_score > max_score then
+                max_score = total_score
               end
             end
           end
 
-          var total_trees: U32 =
-            Iter[Array[Bool]](visible_trees.values())
-              .flat_map[U32]({
-                (row: Array[Bool]): Iterator[U32] => 
-                  Iter[Bool](row.values())
-                    .map[U32]({
-                      (v) => if v then 1 else 0 end
-                    })
-              })
-              .fold[U32](0, {(acc, v) => acc + v})
-          stdout.print("Total visible trees is " + total_trees.string())
+          stdout.print("Highest score is " + max_score.string())
       end
     end
